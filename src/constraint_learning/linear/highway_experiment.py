@@ -122,8 +122,8 @@ def fast():
 def cfg():
     num_thetas = 5
     num_new_thetas = 5
-    source_goals = ["left", "middle", "right"]
-    target_goals = ["left", "middle", "right"]
+    source_goals = None#["left", "middle", "right"]
+    target_goals = None#["left", "middle", "right"]
     source_env = "Intersect-TruncateOnly-v0"
     target_env = "Intersect-TruncateOnly-v0"
     demonstration_folder = "demonstrations/"
