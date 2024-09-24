@@ -3,12 +3,12 @@
     "num_points": 30,
     "num_seeds": 5,
     "env_kwargs": {
-        "width": 3,
-        "height": 3,
-        "num_goals": 2,
-        "num_forbidden": 3,
-        "num_constraints": 2,
-        "random_action_prob": 0.0,
+        "width": 10,
+        "height": 10,
+        "num_goals": 20,
+        "num_forbidden": 10,
+        "num_constraints": 4,
+        "random_action_prob": 0.2,
         "discount_factor": 0.9,
         "ensure_feasibility": true,
         "use_sparse_transitions": false
@@ -24,6 +24,6 @@
         "known_reward_irl_max_ent",
         "shared_reward_irl_max_ent"
     ],
-    "experiment_label": "gridworld_small_exp1",
+    "experiment_label": "gridworld_exp1",
     "experiment_script": "src/constraint_learning/linear/gridworld_experiment.py"
 }
