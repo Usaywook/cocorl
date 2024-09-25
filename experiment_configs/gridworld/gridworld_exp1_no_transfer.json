@@ -28,7 +28,7 @@
         50
     ],
     "num_points": 30,
-    "num_seeds": 48,
+    "num_seeds": 50,
     "env_kwargs": {
         "width": 3,
         "height": 3,

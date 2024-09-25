@@ -19,6 +19,9 @@ def plot_shadow_curve(draw_keys,
                       linestyle_dict=None,
                       adjust=None,
                       colors=None,
+                      legend_loc=None,
+                      fill_alpha=0.2,
+                      line_alpha=1.0,
                       linewidth=3,
                       img_size=(7, 5),
                       axis_size=15,
@@ -38,13 +41,14 @@ def plot_shadow_curve(draw_keys,
         plt.fill_between(x_dict_std[key],
                          y_dict_mean[key] - y_dict_std[key],
                          y_dict_mean[key] + y_dict_std[key],
-                         alpha=0.2,
+                         alpha=fill_alpha,
                          color=colors[key_idx],
                          edgecolor="w",
                          )
         plt.plot(x_dict_mean[key],
                  y_dict_mean[key],
                  color=colors[key_idx],
+                 alpha=line_alpha,
                  linewidth=linewidth,
                  label=key if legend_dict is None else legend_dict[key],
                  linestyle='-' if linestyle_dict is None else linestyle_dict[key])
@@ -52,7 +56,7 @@ def plot_shadow_curve(draw_keys,
     if ylim is not None:
         plt.ylim(ylim[0], ylim[1])
     if legend_size is not None:
-        plt.legend(fontsize=legend_size, loc='upper left')  # upper right, lower left
+        plt.legend(fontsize=legend_size, loc=legend_loc)  # upper left, upper right, lower left
     if title is not None:
         plt.title(title, fontsize=title_size)
     if xlabel is not None:
@@ -64,7 +68,7 @@ def plot_shadow_curve(draw_keys,
     if not save_name:
         plt.show()
     else:
-        plt.savefig('{0}_shadow.png'.format(save_name))
+        plt.savefig('{0}.png'.format(save_name))
     plt.close()
 
 

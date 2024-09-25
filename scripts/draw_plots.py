@@ -15,26 +15,27 @@ def parse_args():
     parser.add_argument("--exp_label", type=str, default="gridworld")
     parser.add_argument("--study", type=str, default="no_transfer")
     parser.add_argument("--file", type=str, default="grid_aggregated.csv")
-    parser.add_argument("--mode", type=str, default="all", help="all | single")
     parser.add_argument('--plot_keys', nargs='+', type=str, default=["safe_constraint_violation",
                                                                      "safe_reward"],
                         help='input plot keys')
 
-    parser.add_argument('--adjust', nargs=4, type=float, default=[0.14, 0.96, 0.92, 0.12],
+    parser.add_argument('--adjust', nargs=4, type=float, default=[0.12, 0.96, 0.92, 0.12],
                         help='subplots_adjust(left=adjust[0], right=adjust[1], top=adjust[2], bottom=adjust[3])')
-    parser.add_argument('--img_size', nargs=2, type=float, default=[8.5, 6.5],
+    parser.add_argument('--img_size', nargs=2, type=float, default=[6.4, 5.6],
                         help='figsize')
     parser.add_argument("--title_size", type=int, default=20)
     parser.add_argument("--axis_size", type=int, default=18)
     parser.add_argument("--legend_size", type=int, default=18)
-    parser.add_argument("--linewidth", type=int, default=3)
+    parser.add_argument("--linewidth", type=int, default=4)
+    parser.add_argument("--line_alpha", type=float, default=0.8)
+    parser.add_argument("--fill_alpha", type=float, default=0.2)
 
     parser.add_argument("--index_step", type=int, default=2)
-    parser.add_argument("--average_num", type=int, default=1)
+    parser.add_argument("--average_num", type=int, default=2)
     parser.add_argument("--max_index", type=int, default=-1)
-    parser.add_argument('--convention', action='store_false', help='Enable the conventional moving average (default: True)')
-    parser.add_argument('--random_sampling', action='store_true', help='Enable the random sampling for moving average (default: False)')
-    parser.add_argument('--norm_reward', action='store_true', help='Enable normalizing reward (default: False)')
+    parser.add_argument('--convention', action='store_true', help='Enable the conventional moving average (default: False)')
+    parser.add_argument('--random_sampling', action='store_false', help='Disable the random sampling for moving average (default: True)')
+    parser.add_argument('--norm_reward', action='store_false', help='Disable normalizing reward (default: True)')
     parser.add_argument('--save', action='store_true', help='Enable save plot (default: False)')
 
     return parser.parse_args()
@@ -57,6 +58,8 @@ class Plotter(object):
         self.axis_size = args.axis_size
         self.legend_size = args.legend_size
         self.linewidth = args.linewidth
+        self.line_alpha = args.line_alpha
+        self.fill_alpha = args.fill_alpha
 
         self.index_step = args.index_step
         self.average_num = args.average_num
@@ -68,7 +71,6 @@ class Plotter(object):
         self.save = args.save
 
         self.exp_label = args.exp_label
-        self.mode = args.mode
 
         method_names_labels_dict_all = {
             "constraint_learning": "CoCoRL",
@@ -79,19 +81,13 @@ class Plotter(object):
         self.method_names_labels_dict = {method: method_names_labels_dict_all[method] for method in self.unique_methods}
 
         label_dict_all = {
-            "safe_constraint_distance": "Constraint Violation",
             "safe_constraint_violation": "Constraint Violation",
-            "safe_constraint_max": "Constraint Violation",
-            "true_reward": "Return",
             "safe_reward": "Return",
         }
         self.label_dict = {key: label_dict_all[key] for key in self.plot_keys}
 
         plot_y_lim_dict_all = {
-            "safe_constraint_distance": None, #(0,1),
             "safe_constraint_violation": None, #(0,1),
-            "safe_constraint_max": None, #(0,1),
-            "true_reward": None, #(0,8),
             "safe_reward": None, #(0,8),
         }
         self.plot_y_lim_dict = {key: plot_y_lim_dict_all[key] for key in self.plot_keys}
@@ -201,7 +197,8 @@ class Plotter(object):
 
                 result_moving_all.append(np.concatenate([result_all[i:], filling_in_values]))
             result_moving_all = np.mean(result_moving_all, axis=0)
-            return result_moving_all[:-average_num]
+            # return result_moving_all[:-average_num]
+            return result_moving_all
 
 
     def _indice_step_fn(self, i):
@@ -234,7 +231,7 @@ class Plotter(object):
                 if len(plot_values) < min_len:
                     min_len = len(plot_values)
                 all_plot_values.append(plot_values)
-            
+
             plot_value_all = []
             for plot_values in all_plot_values:
                 plot_value_all.append(plot_values[:min_len])
@@ -249,10 +246,9 @@ class Plotter(object):
                         plot_value_t.append(plot_value_t[j % len(plot_value_t)])  # filling in values
                 for j in range(len(plot_value_t)):
                     plot_value_all[j].append(plot_value_t[j])
-                    
+
             mean_plot_values = np.mean(np.asarray(plot_value_all), axis=0)
-            # std_plot_values = np.std(np.asarray(plot_value_all), axis=0)
-            std_plot_values = np.std(np.asarray(plot_value_all), axis=0, ddof=1) / 5
+            std_plot_values = np.std(np.asarray(plot_value_all), axis=0) / max(len(all_results) - 1, 1)
             mean_results.update({key: mean_plot_values})
             std_results.update({key: std_plot_values})
             indice.update({key: [i for i in range(max_len)]})
@@ -275,13 +271,15 @@ class Plotter(object):
                 std_results_moving_avg_dict.update({method: all_std_dict[method][key]})
                 indice_dict.update({method: all_indice_dict[method][key]})
 
-            title = self.exp_label.capitalize()
-            save_name = os.path.join(self.save_dir, self.exp_label + '_' + key + '_' + self.mode) if self.save else None
+            # title = self.exp_label.capitalize()
+            title = self.label_dict[key]
+            label = None # self.label_dict[key]
+            save_name = os.path.join(self.save_dir, self.exp_label + '_' + key) if self.save else None
 
             self.plot_results(mean_results_moving_avg_dict=mean_results_moving_avg_dict,
                             std_results_moving_avg_dict=std_results_moving_avg_dict,
                             indice=indice_dict,
-                            label=self.label_dict[key],
+                            label=label,
                             method_names=self.unique_methods,
                             ylim=self.plot_y_lim_dict[key],
                             save_name=save_name,
@@ -338,6 +336,8 @@ class Plotter(object):
                         axis_size=axis_size if axis_size is not None else 18,
                         adjust=adjust,
                         colors=colors,
+                        line_alpha=self.line_alpha,
+                        fill_alpha=self.fill_alpha,
                         linewidth=linewidth if linewidth is not None else 3,
                         title_size=title_size if axis_size is not None else 20,
                         save_name=save_name, )
