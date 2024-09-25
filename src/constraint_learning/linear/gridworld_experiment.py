@@ -4,6 +4,7 @@ from typing import Any, Dict, Optional
 import einops
 import numpy as np
 import sacred
+from tqdm import tqdm
 
 from constraint_learning.algos import lp
 from constraint_learning.envs import tabular
@@ -143,14 +144,17 @@ def gridworld_experiment(
     env_transfer: bool,
     seed: int,
     experiment_label: str,
+    verbose: bool = False,
 ) -> results.CEHighwayExperimentResult:
-    print(f"Experiment {experiment_label} (Seed: {seed})")
+    if verbose:
+        print(f"Experiment {experiment_label} (Seed: {seed})")
 
     if num_thetas > max_thetas:
-        print(
-            "Warning, max_thetas too low. "
-            f"num_thetas: {num_thetas}; max_thetas: {max_thetas}"
-        )
+        if verbose:
+            print(
+                "Warning, max_thetas too low. "
+                f"num_thetas: {num_thetas}; max_thetas: {max_thetas}"
+            )
         max_thetas = num_thetas
 
     env_kwargs = dict(
@@ -195,13 +199,14 @@ def gridworld_experiment(
 
     _, unique_idx = np.unique(np.round(demonstrations, 6), axis=0, return_index=True)
 
-    print("Thetas:")
-    for th in theta:
-        print(th)
-    print("Demonstrations:")
-    for d in demonstrations:
-        print(d)
-    print("Unique demonstrations:", unique_idx)
+    if verbose:
+        print("Thetas:")
+        for th in theta:
+            print(th)
+        print("Demonstrations:")
+        for d in demonstrations:
+            print(d)
+        print("Unique demonstrations:", unique_idx)
 
     # get safe set
     if method == "constraint_learning":
@@ -221,20 +226,21 @@ def gridworld_experiment(
             algorithm.find_closest_point_in_polytope(d, safe_polytope)
             for d in demonstrations
         ]
-        print(dist)
-        print(demos_in_safe_set)
+        if verbose:
+            print(dist)
+            print(demos_in_safe_set)
 
         A, b = np.copy(safe_polytope.A), np.copy(safe_polytope.b)
         num_inferred_constraints = A.shape[0]
 
         if env_transfer:
-            env.random_action_prob = 0
+            env.random_action_prob = 0.2
             env.transitions = env._get_transitions()
 
         # solve for new rewards under inferred constraints
         safe_solutions = []
         found_safe_solution = []
-        for th in new_theta:
+        for th in tqdm(new_theta, desc=f"solve for new rewards with {method}"):
             try:
                 safe_solutions.append(
                     get_solution_features(
@@ -272,7 +278,7 @@ def gridworld_experiment(
             )
         elif method == "vanilla_irl_max_ent":
             inferred_rewards = []
-            for expert_policy in demonstration_policies:
+            for ind, expert_policy in enumerate(demonstration_policies):
                 max_ent_irl = max_ent_tabular.TabularMaxEntIRL(
                     env,
                     expert_policy,
@@ -282,7 +288,7 @@ def gridworld_experiment(
                     regularizer=1e-5,
                     convergence_threshold=1e-4,
                 )
-                r = max_ent_irl.run(verbose=True)
+                r = max_ent_irl.run(verbose=False, method=method + f"_{ind}/{num_thetas}")
                 inferred_rewards.append(r)
             irl_reward = np.mean(inferred_rewards, axis=0)
         elif method == "known_reward_irl_max_ent":
@@ -296,7 +302,7 @@ def gridworld_experiment(
                 convergence_threshold=1e-4,
                 shared_constraint=True,
                 known_rewards=theta,
-            ).run(verbose=True)
+            ).run(verbose=False, method=method)
         elif method == "shared_reward_irl_max_ent":
             _, irl_reward = max_ent_tabular.TabularMaxEntIRL(
                 env,
@@ -308,16 +314,16 @@ def gridworld_experiment(
                 convergence_threshold=1e-4,
                 shared_constraint=True,
                 known_rewards=None,
-            ).run(verbose=True)
+            ).run(verbose=False, method=method)
         else:
             raise ValueError(f"Unknown method {method}")
 
         if env_transfer:
-            env.random_action_prob = 0
+            env.random_action_prob = 0.2
             env.transitions = env._get_transitions()
 
         safe_solutions = []
-        for th in new_theta:
+        for th in tqdm(new_theta, desc=f"solve for new rewards with {method}"):
             safe_solutions.append(
                 get_solution_features(
                     solver,
@@ -383,10 +389,10 @@ def gridworld_experiment(
             true_solution_in_uncertain_set[i] = not (
                 true_solution_in_safe_set[i] or true_solution_in_unsafe_set[i]
             )
-
-    print("Safe solutions:")
-    for solution in safe_solutions:
-        print(solution)
+    if verbose:
+        print("Safe solutions:")
+        for solution in safe_solutions:
+            print(solution)
 
     return results.GridworldExperimentResult(
         true_reward=true_reward,

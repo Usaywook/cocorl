@@ -83,6 +83,7 @@ class Gridworld(TabularCMDP):
     UP = 2
     DOWN = 3
     STAY = 4
+    verbose = False 
 
     ACTION_STEP = {
         LEFT: (-1, 0),
@@ -145,10 +146,11 @@ class Gridworld(TabularCMDP):
                 try:
                     lp.TabularLPSolver(env).solve()
                     feasible = True
-                    print(
-                        "Found feasible environment with max_cost_limit:",
-                        max_cost_limit,
-                    )
+                    if self.verbose:
+                        print(
+                            "Found feasible environment with max_cost_limit:",
+                            max_cost_limit,
+                        )
                     break
                 except ValueError:
                     pass

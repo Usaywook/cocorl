@@ -17,7 +17,6 @@ def parse_args():
     parser.add_argument("--file", type=str, default="grid_aggregated.csv")
     parser.add_argument("--mode", type=str, default="all", help="all | single")
     parser.add_argument('--plot_keys', nargs='+', type=str, default=["safe_constraint_violation",
-                                                                    #  "true_reward",
                                                                      "safe_reward"],
                         help='input plot keys')
 
@@ -31,7 +30,7 @@ def parse_args():
     parser.add_argument("--linewidth", type=int, default=3)
 
     parser.add_argument("--index_step", type=int, default=2)
-    parser.add_argument("--average_num", type=int, default=2)
+    parser.add_argument("--average_num", type=int, default=1)
     parser.add_argument("--max_index", type=int, default=-1)
     parser.add_argument('--convention', action='store_false', help='Enable the conventional moving average (default: True)')
     parser.add_argument('--random_sampling', action='store_true', help='Enable the random sampling for moving average (default: False)')
@@ -80,14 +79,18 @@ class Plotter(object):
         self.method_names_labels_dict = {method: method_names_labels_dict_all[method] for method in self.unique_methods}
 
         label_dict_all = {
+            "safe_constraint_distance": "Constraint Violation",
             "safe_constraint_violation": "Constraint Violation",
+            "safe_constraint_max": "Constraint Violation",
             "true_reward": "Return",
             "safe_reward": "Return",
         }
         self.label_dict = {key: label_dict_all[key] for key in self.plot_keys}
 
         plot_y_lim_dict_all = {
+            "safe_constraint_distance": None, #(0,1),
             "safe_constraint_violation": None, #(0,1),
+            "safe_constraint_max": None, #(0,1),
             "true_reward": None, #(0,8),
             "safe_reward": None, #(0,8),
         }
@@ -135,7 +138,7 @@ class Plotter(object):
             for seed_df in seed_df_list:
                 results = {}
                 for key in self.plot_keys:
-                    results.update({key: seed_df[key].values})
+                    results.update({key: list(seed_df[key].values)})
                 all_results.append(results)
 
             mean_dict, std_dict, indice = self.mean_std_plot_results(all_results)
@@ -166,7 +169,7 @@ class Plotter(object):
                     indice_plot = indice_plot[:self.max_index]
 
                 all_mean_dict[method].update({key: mean_results_moving_average})
-                all_std_dict[method].update({key: std_results_moving_average / 2})
+                all_std_dict[method].update({key: std_results_moving_average})
                 all_indice_dict[method].update({key: indice_plot})
 
         return {"mean": all_mean_dict,
@@ -231,7 +234,7 @@ class Plotter(object):
                 if len(plot_values) < min_len:
                     min_len = len(plot_values)
                 all_plot_values.append(plot_values)
-
+            
             plot_value_all = []
             for plot_values in all_plot_values:
                 plot_value_all.append(plot_values[:min_len])
@@ -246,8 +249,10 @@ class Plotter(object):
                         plot_value_t.append(plot_value_t[j % len(plot_value_t)])  # filling in values
                 for j in range(len(plot_value_t)):
                     plot_value_all[j].append(plot_value_t[j])
+                    
             mean_plot_values = np.mean(np.asarray(plot_value_all), axis=0)
-            std_plot_values = np.std(np.asarray(plot_value_all), axis=0)
+            # std_plot_values = np.std(np.asarray(plot_value_all), axis=0)
+            std_plot_values = np.std(np.asarray(plot_value_all), axis=0, ddof=1) / 5
             mean_results.update({key: mean_plot_values})
             std_results.update({key: std_plot_values})
             indice.update({key: [i for i in range(max_len)]})

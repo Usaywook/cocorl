@@ -2,6 +2,7 @@ from typing import Optional
 
 import einops
 import numpy as np
+from tqdm import tqdm
 
 from constraint_learning.envs import tabular
 
@@ -122,7 +123,7 @@ class TabularMaxEntIRL(object):
         pi = self.soft_value_iteration(state_reward, verbose=False)
         return self.compute_feature_expectations(pi)
 
-    def run(self, verbose: bool = False) -> np.ndarray:
+    def run(self, verbose: bool = False, method: str = None) -> np.ndarray:
         # Weights initialization
         if self.known_rewards is None:
             reward = (
@@ -134,7 +135,7 @@ class TabularMaxEntIRL(object):
         constraint = np.zeros(self.mdp.num_states) / self.mdp.num_states
 
         # Gradient descent
-        for i in range(self.max_iter):
+        for i in tqdm(range(self.max_iter), desc=method):
             expected_vf = self.compute_expected_state_visitation_frequency(
                 reward, constraint
             )

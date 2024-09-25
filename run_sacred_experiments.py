@@ -8,6 +8,7 @@ import subprocess
 import sys
 import time
 import shlex
+from tqdm import tqdm
 from multiprocessing import Pool
 from random import randint
 
@@ -106,6 +107,7 @@ if __name__ == "__main__":
         action="store_true",
         help="Redirect all stdout and stderr output to /dev/null",
     )
+    parser.add_argument("--verbose", action="store_true")
     args = parser.parse_args()
 
     with open(args.config) as f:
@@ -196,7 +198,8 @@ if __name__ == "__main__":
             os.system(f"chmod +x {scriptfile}")
             os.system(bsub_command)
         else:
-            print(" ".join(command))
+            if args.verbose:
+                print(" ".join(command))
             stderr = []
             with subprocess.Popen(
                 command,
@@ -208,7 +211,8 @@ if __name__ == "__main__":
                 for line in p.stderr:
                     stderr.append(line)
             returncode = p.wait()
-            print("\n".join(stderr))
+            if args.verbose:
+                print("\n".join(stderr))
 
     t = time.time()
     num_jobs = len(job_list)
@@ -232,9 +236,16 @@ if __name__ == "__main__":
                 run_experiment(job)
         else:
             with Pool(args.num_jobs + 1) as p:  # +1 for base process
-                p.map(run_experiment, job_list)
-        t = time.time() - t
+                # p.map(run_experiment, job_list)
+                for _ in tqdm(
+                    p.imap_unordered(run_experiment, job_list),
+                    total=len(job_list),
+                    desc=config["experiment_label"],
+                    bar_format="{l_bar}{bar} | {n_fmt}/{total_fmt} [{elapsed}<{remaining}]",
+                ):
+                    pass
 
+        t = time.time() - t
         print("Done in {:.2f} seconds".format(t))
     else:
         print("No jobs started.")

@@ -4,6 +4,7 @@ import cvxopt
 import numpy as np
 import scipy
 import scipy.spatial
+from tqdm import tqdm
 from cvxopt import solvers
 from scipy.optimize import linprog
 
@@ -174,6 +175,7 @@ def get_safe_set(
     duplicate_precision: int = 8,
     starting_set: List[int] = [],
     return_vertices: bool = False,
+    verbose: bool = False,
 ) -> Tuple[Polytope, List[Polytope]]:
     """Iteratively construct safe set as convex hull of corners.
 
@@ -200,14 +202,16 @@ def get_safe_set(
     num_corners, num_dims = corners.shape
 
     if num_corners == 1:
-        print("Special case: 1 corner")
+        if verbose:
+            print("Special case: 1 corner")
         A = np.vstack([np.eye(num_dims), -np.eye(num_dims)])
         b = np.concatenate([corners[0], -corners[0]])
         if return_vertices:
             return Polytope(A, b), [], []
         return Polytope(A, b), []
     if num_corners == 2:
-        print("Special case: 2 corners")
+        if verbose:
+            print("Special case: 2 corners")
         vec = (corners[1] - corners[0]).reshape((1, -1))
         # find d-1 orthogonal vectors
         _, _, V = np.linalg.svd(vec)
@@ -230,7 +234,8 @@ def get_safe_set(
             return Polytope(A, b), [], []
         return Polytope(A, b), []
 
-    print(f"Num points: {num_points}   ({num_corners} corners)")
+    if verbose:
+        print(f"Num points: {num_points}   ({num_corners} corners)")
 
     if num_points is None or num_corners <= num_points:
         num_points = num_corners
@@ -241,7 +246,8 @@ def get_safe_set(
     if len(starting_set) > 0:
         point_idx = np.concatenate([point_idx, starting_set])
     remaining_idx = np.array([i for i in remaining_idx if i not in point_idx])
-
+    
+    progress_bar = tqdm(total=num_points, desc="constraint_learning")
     while point_count < num_points:
         polytope, _ = _get_safe_set_from_fixed_points(
             corners=corners[point_idx],
@@ -253,14 +259,22 @@ def get_safe_set(
         add_idx, add_dist = _furthest_point(corners[remaining_idx], polytope)
         add_idx = remaining_idx[add_idx]
         if add_dist < stopping_dist:
-            print(f"Distance of furthest point {add_dist} < {stopping_dist}.")
-            print(f"Stopping with {point_count} points.")
+            progress_bar.update(num_points-point_count)
+            if verbose:
+                print(f"Distance of furthest point {add_dist} < {stopping_dist}.")
+                print(f"Stopping with {point_count} points.")
             break
+        else:
+            progress_bar.update(1)
+            
         point_idx = np.concatenate([point_idx, [add_idx]])
         remaining_idx = np.array([i for i in remaining_idx if i not in point_idx])
         point_count += 1
-        print(f"Added point {add_idx}  (dist: {add_dist})")
-        print("point_idx:", point_idx)
+        if verbose:
+            print(f"Added point {add_idx}  (dist: {add_dist})")
+            print("point_idx:", point_idx)
+            
+        progress_bar.close()
 
     return _get_safe_set_from_fixed_points(
         corners=corners[point_idx],
@@ -277,6 +291,7 @@ def _get_safe_set_from_fixed_points(
     min_singular_value: float,
     orthogonal_tolerance: float,
     return_vertices: bool,
+    verbose: bool = False,
 ) -> Tuple[Polytope, List[Polytope]]:
     """Construct safe set from a fixed set of corners.
 
@@ -313,7 +328,8 @@ def _get_safe_set_from_fixed_points(
     U, d, V = np.linalg.svd((corners - corners[-1])[:-1], full_matrices=True)
 
     num_dim = max(np.sum(d > min_singular_value), 2)  # qhull needs at least 2-D
-    print("Effective dimension", num_dim)
+    if verbose:
+        print("Effective dimension", num_dim)
 
     if num_dim < corners.shape[1] + 1:
         # 1. project corners to lower dimensional space
