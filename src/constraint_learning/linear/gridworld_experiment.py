@@ -18,7 +18,7 @@ TOLERANCE = 1e-4
 ex = sacred.Experiment("gridworld_experiment_lp")
 ex.observers = [
     logging.SetID(),
-    sacred.observers.FileStorageObserver("results/gridworld/exp4"),
+    sacred.observers.FileStorageObserver("results/gridworld"),
 ]
 
 
