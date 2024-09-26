@@ -48,12 +48,14 @@ def config():
     constraint_sort_method = "num_violations"
     write_demonstration = True
     experiment_label = None
+    verbose=False
 
 
 @ce_train.automain
 def main(
     _run,
     experiment_label,
+    verbose,
     env_name,
     env_goal,
     reward_mean,
@@ -149,7 +151,7 @@ def main(
             num_candidates=num_candidates,
             num_elite=num_elite,
             num_trajectories=num_trajectories,
-            verbose=True,
+            verbose=verbose,
             callback=callback,
         )
         for _ in range(solver_reinit)

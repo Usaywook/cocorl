@@ -8,4 +8,4 @@ def time_decorator(func):
         execution_time = end_time - start_time  # 실행 시간 계산
         print(f"Execution time: {execution_time:.6f} seconds")
         return result
-    return wrapper
+    return wrapper()

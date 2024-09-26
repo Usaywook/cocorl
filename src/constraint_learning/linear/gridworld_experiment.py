@@ -240,7 +240,7 @@ def gridworld_experiment(
         # solve for new rewards under inferred constraints
         safe_solutions = []
         found_safe_solution = []
-        for th in tqdm(new_theta, desc=f"solve for new rewards with {method}"):
+        for th in tqdm(new_theta, desc=f"Solve for rewards with {method}"):
             try:
                 safe_solutions.append(
                     get_solution_features(
@@ -323,7 +323,7 @@ def gridworld_experiment(
             env.transitions = env._get_transitions()
 
         safe_solutions = []
-        for th in tqdm(new_theta, desc=f"solve for new rewards with {method}"):
+        for th in tqdm(new_theta, desc=f"Solve new rewards with {method}"):
             safe_solutions.append(
                 get_solution_features(
                     solver,

@@ -1,6 +1,7 @@
 from typing import Optional
 
 import numpy as np
+from tqdm import tqdm
 
 from constraint_learning.algos import cross_entropy
 
@@ -17,6 +18,7 @@ def max_ent_irl(
     known_rewards: Optional[np.ndarray] = None,
     regularizer: float = 0.0,
     ce_solver_kwargs: dict = {},
+    method=None,
     callback=None,
 ):
     num_demos, num_dim = demonstration_features.shape
@@ -30,7 +32,7 @@ def max_ent_irl(
     # Init constraint parameters
     constraint_weight = np.zeros(num_rew_features + num_constraint_features)
 
-    for it in range(num_iterations):
+    for it in tqdm(range(num_iterations), desc=method):
         demo_i = it % num_demos
         expert_features = demonstration_features[demo_i]
 
@@ -42,6 +44,7 @@ def max_ent_irl(
             constraint_thresholds=None,
             **ce_solver_kwargs,
             callback=None,
+            method=method,
         )
         features = ce_result.features
 

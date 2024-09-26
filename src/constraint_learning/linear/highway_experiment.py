@@ -5,8 +5,9 @@ import json
 import random
 from typing import Any, Dict, List, Optional
 
-import numpy as np
 import sacred
+import numpy as np
+from tqdm import tqdm
 
 from constraint_learning.algos import cross_entropy
 from constraint_learning.linear import algorithm
@@ -26,7 +27,7 @@ CONSTRAINT_INDICES = np.array([5, 6, 7, 8])
 Demonstration = Dict[str, Any]
 
 ex = sacred.Experiment("highway_experiment_ce")
-ex.observers = [logging.SetID(), sacred.observers.FileStorageObserver("results")]
+ex.observers = [logging.SetID(), sacred.observers.FileStorageObserver("results/highway")]
 
 
 def solve_with_reinits(
@@ -37,6 +38,7 @@ def solve_with_reinits(
     constraint_parameters: Optional[np.ndarray],
     constraint_thresholds: Optional[np.ndarray],
     reinits: int,
+    method: str = None,
 ):
     results = [
         solver.solve(
@@ -44,9 +46,10 @@ def solve_with_reinits(
             constraint_parameters=constraint_parameters,
             constraint_thresholds=constraint_thresholds,
             callback=None,
+            method=method,
             **ce_solver_kwargs,
         )
-        for _ in range(reinits)
+        for _ in tqdm(range(reinits), desc=f"CEM reinit with {method}")
     ]
 
     feasible = any([r.feasible for r in results])
@@ -135,7 +138,7 @@ def cfg():
         "num_candidates": 500,
         "num_elite": 20,
         "num_trajectories": 30,
-        "verbose": True,
+        "verbose": False,
     }
     env_config = {
         "simulation_frequency": 5,
@@ -171,8 +174,10 @@ def highway_experiment(
     method: str,
     new_theta_seed: Optional[int],
     irl_min_iterations: int,
+    verbose: bool = False,
 ) -> results.CEHighwayExperimentResult:
-    print(f"Experiment {experiment_label} (Seed: {seed})")
+    if verbose:
+        print(f"Experiment {experiment_label} (Seed: {seed})")
 
     demonstration_files = glob.glob(f"{demonstration_folder}/*.json")
     phi, threshold = None, None
@@ -198,7 +203,8 @@ def highway_experiment(
             if np.all(phi @ features <= threshold):
                 all_demos.append(demo)
             else:
-                print(f"Skipping demonstration {filename} because it is infeasible.")
+                if verbose:
+                    print(f"Skipping demonstration {filename} because it is infeasible.")
 
     source_sample = sample_demos(
         all_demos=all_demos,
@@ -234,13 +240,14 @@ def highway_experiment(
 
     _, unique_idx = np.unique(np.round(demonstrations, 6), axis=0, return_index=True)
 
-    print("Thetas:")
-    for th in theta:
-        print(th)
-    print("Demonstrations:")
-    for d in demonstrations:
-        print(d)
-    print("Unique demonstrations:", unique_idx)
+    if verbose:
+        print("Thetas:")
+        for th in theta:
+            print(th)
+        print("Demonstrations:")
+        for d in demonstrations:
+            print(d)
+        print("Unique demonstrations:", unique_idx)
 
     source_solver = cross_entropy.CrossEntropySolver(
         source_env, env_config, num_jobs=num_jobs
@@ -286,7 +293,10 @@ def highway_experiment(
         # solve for new rewards under inferred constraints
         found_safe_solution = []
         safe_solutions = []
-        for th_i, th in enumerate(new_theta):
+        for th_i, th in tqdm(enumerate(new_theta),
+                             desc=f"Solve new rewards with {method}",
+                             total=len(new_theta),
+                             bar_format="{l_bar}{bar} | {n_fmt}/{total_fmt} [{elapsed}<{remaining}]"):
             feasible, features = solve_with_reinits(
                 solver=target_solver,
                 ce_solver_kwargs=ce_solver_kwargs,
@@ -294,6 +304,7 @@ def highway_experiment(
                 constraint_parameters=A,
                 constraint_thresholds=b,
                 reinits=solver_reinit,
+                method=method,
             )
             found_safe_solution.append(feasible)
             safe_solutions.append(features)
@@ -333,18 +344,21 @@ def highway_experiment(
             it = locals["it"]
             grad = locals["grad"]
 
-            print("IRL iteration", it)
-            print("expert_features", expert_features)
-            print("features", features)
-            print("grad", grad)
+            if verbose:
+                print("IRL iteration", it)
+                print("expert_features", expert_features)
+                print("features", features)
+                print("grad", grad)
 
             expert_rew = np.dot(expert_features, theta[demo_i])
             current_rew = np.dot(features, theta[demo_i])
             regret = expert_rew - current_rew
-            print("regret", regret)
+            if verbose:
+                print("regret", regret)
 
             constraint = phi @ features - threshold
-            print("constraint", constraint)
+            if verbose:
+                print("constraint", constraint)
 
             _run.log_scalar("irl_regret", regret)
             _run.log_scalar("irl_constraint_total", constraint)
@@ -367,6 +381,7 @@ def highway_experiment(
             num_constraint_features=4,
             regularizer=0.0001,
             ce_solver_kwargs=ce_solver_kwargs,
+            method=method,
             callback=callback,
             **irl_kwargs,
         )
@@ -379,8 +394,12 @@ def highway_experiment(
         # solve for new rewards under inferred constraints
         found_safe_solution = []
         safe_solutions = []
-        for th_i, th in enumerate(new_theta):
-            print(f"Evaluate for theta {th_i}")
+        for th_i, th in tqdm(enumerate(new_theta),
+                             desc=f"Solve new rewards with {method}",
+                             total=len(new_theta),
+                             bar_format="{l_bar}{bar} | {n_fmt}/{total_fmt} [{elapsed}<{remaining}]"):
+            if verbose:
+                print(f"Evaluate for theta {th_i}")
             feasible, features = solve_with_reinits(
                 solver=target_solver,
                 ce_solver_kwargs=ce_solver_kwargs,
@@ -388,6 +407,7 @@ def highway_experiment(
                 constraint_parameters=None,
                 constraint_thresholds=None,
                 reinits=solver_reinit,
+                method=method,
             )
             found_safe_solution.append(feasible)
             safe_solutions.append(features)

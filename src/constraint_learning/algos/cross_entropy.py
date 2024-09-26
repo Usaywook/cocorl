@@ -6,8 +6,10 @@ from typing import Any, Callable, Dict, Optional
 
 import gymnasium
 import numpy as np
+from tqdm import tqdm
 
 from constraint_learning.envs import controller_env, feature_wrapper
+
 
 _ACCELERATION_MEAN = np.array([0.3, 0.3, 2.0])
 _STEERING_MEAN = np.array([5.0, 8.333333333333334])
@@ -89,10 +91,10 @@ def _get_features_from_parameter(
     for _ in range(num_trajectories):
         env.reset()
         done = False
-        env.reset()
         while not done:
             _, _, done, _, info = env.step(env.ACTIONS_INDEXES["IDLE"])
             features.append(info["feature_vector"])
+
     return np.array(features).mean(axis=0)
 
 
@@ -128,6 +130,7 @@ class CrossEntropySolver:
         argmax_goal_param: bool = True,
         verbose: bool = False,
         callback: Optional[Callback] = None,
+        method: str = None,
     ) -> CrossEntropySolverResult:
         """Implements a cross entropy method for (constrained) policy optimization.
 
@@ -197,7 +200,7 @@ class CrossEntropySolver:
         optimal_rew = -np.inf
         found_feasible = False
 
-        for i in range(iterations):
+        for i in tqdm(range(iterations), desc=f"CEM iteration with {method}"):
             if verbose:
                 print("iteration", i)
 

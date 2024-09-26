@@ -246,8 +246,9 @@ def get_safe_set(
     if len(starting_set) > 0:
         point_idx = np.concatenate([point_idx, starting_set])
     remaining_idx = np.array([i for i in remaining_idx if i not in point_idx])
-    
+
     progress_bar = tqdm(total=num_points, desc="constraint_learning")
+    progress_bar.update(point_count)
     while point_count < num_points:
         polytope, _ = _get_safe_set_from_fixed_points(
             corners=corners[point_idx],
@@ -259,22 +260,23 @@ def get_safe_set(
         add_idx, add_dist = _furthest_point(corners[remaining_idx], polytope)
         add_idx = remaining_idx[add_idx]
         if add_dist < stopping_dist:
-            progress_bar.update(num_points-point_count)
             if verbose:
                 print(f"Distance of furthest point {add_dist} < {stopping_dist}.")
                 print(f"Stopping with {point_count} points.")
+            remaining_count = num_points - point_count
+            progress_bar.update(remaining_count)
             break
-        else:
-            progress_bar.update(1)
-            
+
         point_idx = np.concatenate([point_idx, [add_idx]])
         remaining_idx = np.array([i for i in remaining_idx if i not in point_idx])
+
         point_count += 1
+        progress_bar.update(1)
         if verbose:
             print(f"Added point {add_idx}  (dist: {add_dist})")
             print("point_idx:", point_idx)
-            
-        progress_bar.close()
+
+    progress_bar.close()
 
     return _get_safe_set_from_fixed_points(
         corners=corners[point_idx],
