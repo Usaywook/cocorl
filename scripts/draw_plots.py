@@ -13,8 +13,8 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--save_dir", type=str, default="figs")
     parser.add_argument("--exp_label", type=str, default="gridworld")
-    parser.add_argument("--study", type=str, default="no_transfer")
-    parser.add_argument("--file", type=str, default="grid_aggregated.csv")
+    parser.add_argument("--study", type=str, default="transfer")
+    parser.add_argument("--file", type=str, default="results.csv")
     parser.add_argument('--plot_keys', nargs='+', type=str, default=["safe_constraint_violation",
                                                                      "safe_reward"],
                         help='input plot keys')
@@ -25,18 +25,21 @@ def parse_args():
                         help='figsize')
     parser.add_argument("--title_size", type=int, default=20)
     parser.add_argument("--axis_size", type=int, default=18)
-    parser.add_argument("--legend_size", type=int, default=18)
+    parser.add_argument("--legend_size", type=int, default=20)
     parser.add_argument("--linewidth", type=int, default=4)
     parser.add_argument("--line_alpha", type=float, default=0.8)
     parser.add_argument("--fill_alpha", type=float, default=0.2)
+    parser.add_argument("--max_reward", type=float, default=1.0)
 
     parser.add_argument("--index_step", type=int, default=2)
-    parser.add_argument("--average_num", type=int, default=2)
+    parser.add_argument("--average_num", type=int, default=4)
     parser.add_argument("--max_index", type=int, default=-1)
-    parser.add_argument('--convention', action='store_true', help='Enable the conventional moving average (default: False)')
-    parser.add_argument('--random_sampling', action='store_false', help='Disable the random sampling for moving average (default: True)')
-    parser.add_argument('--norm_reward', action='store_false', help='Disable normalizing reward (default: True)')
+
     parser.add_argument('--save', action='store_true', help='Enable save plot (default: False)')
+    parser.add_argument('--convention', action='store_true', help='Enable the conventional moving average (default: False)')
+    parser.add_argument('--norm_reward', action='store_true', help='Disable normalizing reward (default: False)')
+    parser.add_argument('--random_sampling', action='store_false', help='Disable the random sampling for moving average (default: True)')
+    parser.add_argument('--legend_only', action='store_false', help='Enable save legend_only (default: True)')
 
     return parser.parse_args()
 
@@ -68,7 +71,9 @@ class Plotter(object):
         self.random_sampling = args.random_sampling
         self.convention = args.convention
         self.norm_reward = args.norm_reward
+        self.max_reward = args.max_reward
         self.save = args.save
+        self.legend_only = args.legend_only
 
         self.exp_label = args.exp_label
 
@@ -92,17 +97,21 @@ class Plotter(object):
         }
         self.plot_y_lim_dict = {key: plot_y_lim_dict_all[key] for key in self.plot_keys}
 
-        linestyle_dict_all = {"CoCoRL": "-",
-                              "Average IRL": ":",
-                              "Known IRL": "--",
-                              "Shared IRL": "-."}
+        linestyle_dict_all = {
+            "CoCoRL": "-",
+            "Average IRL": ":",
+            "Known IRL": "--",
+            "Shared IRL": "-.",
+        }
         self.linestyle_dict = {method: linestyle_dict_all[method_names_labels_dict_all[method]]
                                for method in self.unique_methods}
 
-        colors_dict_all = {"CoCoRL": 'r',
-                           "Average IRL": "b",
-                           "Known IRL": "orange",
-                           "Shared IRL": 'g'}
+        colors_dict_all = {
+            "CoCoRL": "r",
+            "Average IRL": "b",
+            "Known IRL": "orange",
+            "Shared IRL": "g",
+        }
         self.colors = [colors_dict_all[method_names_labels_dict_all[method]]
                        for method in self.unique_methods]
 
@@ -110,7 +119,7 @@ class Plotter(object):
         reward_keys = [key for key in self.plot_keys if 'reward' in key]
         reward_keys = [key for key in df.keys() if key in reward_keys]
         for norm_key in reward_keys:
-            max_value = abs(df[norm_key].max())
+            max_value = abs(df[norm_key].max()) if self.max_reward == 1 else self.max_reward
             df[norm_key] = df[norm_key].copy() / max_value
 
     def _process_df(self, args):
@@ -168,10 +177,7 @@ class Plotter(object):
                 all_std_dict[method].update({key: std_results_moving_average})
                 all_indice_dict[method].update({key: indice_plot})
 
-        return {"mean": all_mean_dict,
-                "std": all_std_dict,
-                "indice": all_indice_dict}
-
+        return {"mean": all_mean_dict, "std": all_std_dict, "indice": all_indice_dict}
 
     def compute_moving_average(self, result_all, average_num, random_sampling=False, convention=True):
         if convention:
@@ -199,7 +205,6 @@ class Plotter(object):
             result_moving_all = np.mean(result_moving_all, axis=0)
             # return result_moving_all[:-average_num]
             return result_moving_all
-
 
     def _indice_step_fn(self, i):
         return max(i * self.index_step, 1)
@@ -248,13 +253,12 @@ class Plotter(object):
                     plot_value_all[j].append(plot_value_t[j])
 
             mean_plot_values = np.mean(np.asarray(plot_value_all), axis=0)
-            std_plot_values = np.std(np.asarray(plot_value_all), axis=0) / max(len(all_results) - 1, 1)
+            std_plot_values = np.std(np.asarray(plot_value_all), axis=0) / np.sqrt(max(len(all_results) - 1, 1))
             mean_results.update({key: mean_plot_values})
             std_results.update({key: std_plot_values})
             indice.update({key: [i for i in range(max_len)]})
 
         return mean_results, std_results, indice
-
 
     def draw_plot(self):
         all_mean_dict = self.precess_dict["mean"]
@@ -276,25 +280,43 @@ class Plotter(object):
             label = None # self.label_dict[key]
             save_name = os.path.join(self.save_dir, self.exp_label + '_' + key) if self.save else None
 
-            self.plot_results(mean_results_moving_avg_dict=mean_results_moving_avg_dict,
-                            std_results_moving_avg_dict=std_results_moving_avg_dict,
-                            indice=indice_dict,
-                            label=label,
-                            method_names=self.unique_methods,
-                            ylim=self.plot_y_lim_dict[key],
-                            save_name=save_name,
-                            legend_dict=self.method_names_labels_dict,
-                            linestyle_dict=self.linestyle_dict,
-                            title=title,
-                            xlabel='Number of Demonstrations',
-                            title_size=self.title_size,
-                            legend_size=self.legend_size,
-                            axis_size=self.axis_size,
-                            img_size=self.img_size,
-                            adjust=self.adjust,
-                            linewidth=self.linewidth,
-                            colors=self.colors,
-                            )
+            self.plot_results(
+                mean_results_moving_avg_dict=mean_results_moving_avg_dict,
+                std_results_moving_avg_dict=std_results_moving_avg_dict,
+                indice=indice_dict,
+                label=label,
+                method_names=self.unique_methods,
+                ylim=self.plot_y_lim_dict[key],
+                save_name=save_name,
+                legend_dict=self.method_names_labels_dict,
+                linestyle_dict=self.linestyle_dict,
+                title=title,
+                xlabel="Number of Demonstrations",
+                title_size=self.title_size,
+                legend_size=None if self.legend_only else self.legend_size,
+                axis_size=self.axis_size,
+                img_size=self.img_size,
+                adjust=self.adjust,
+                linewidth=self.linewidth,
+                colors=self.colors,
+            )
+
+        if self.legend_only:
+            plt.figure(figsize=(len(self.unique_methods)*3, 1))
+            for key_idx, key in enumerate(self.unique_methods):
+                plt.plot(
+                    [],
+                    [],
+                    color=self.colors[key_idx],
+                    label=self.method_names_labels_dict[key],
+                    linewidth=self.linewidth,
+                    linestyle=self.linestyle_dict[key],
+                )
+                plt.legend(fontsize=self.legend_size, loc='center', ncol=len(self.unique_methods))
+                plt.axis('off')
+
+            plt.savefig(os.path.join(self.save_dir, "legend_only.png"))
+            plt.close()
 
     def plot_results(self, mean_results_moving_avg_dict,
                      std_results_moving_avg_dict,
@@ -320,27 +342,29 @@ class Plotter(object):
             plot_mean_y_dict.update({method_name: mean_results_moving_avg_dict[method_name]})
             plot_std_y_dict.update({method_name: std_results_moving_avg_dict[method_name]})
 
-        plot_shadow_curve(draw_keys=method_names,
-                        x_dict_mean=plot_x_dict,
-                        y_dict_mean=plot_mean_y_dict,
-                        x_dict_std=plot_x_dict,
-                        y_dict_std=plot_std_y_dict,
-                        img_size=img_size if img_size is not None else (6, 5.8),
-                        ylim=ylim,
-                        title=title,
-                        xlabel=xlabel,
-                        ylabel=label,
-                        legend_dict=legend_dict,
-                        legend_size=legend_size if legend_size is not None else 18,
-                        linestyle_dict=linestyle_dict,
-                        axis_size=axis_size if axis_size is not None else 18,
-                        adjust=adjust,
-                        colors=colors,
-                        line_alpha=self.line_alpha,
-                        fill_alpha=self.fill_alpha,
-                        linewidth=linewidth if linewidth is not None else 3,
-                        title_size=title_size if axis_size is not None else 20,
-                        save_name=save_name, )
+        plot_shadow_curve(
+            draw_keys=method_names,
+            x_dict_mean=plot_x_dict,
+            y_dict_mean=plot_mean_y_dict,
+            x_dict_std=plot_x_dict,
+            y_dict_std=plot_std_y_dict,
+            img_size=img_size if img_size is not None else (6, 5.8),
+            ylim=ylim,
+            title=title,
+            xlabel=xlabel,
+            ylabel=label,
+            legend_dict=legend_dict,
+            legend_size=legend_size,
+            linestyle_dict=linestyle_dict,
+            axis_size=axis_size if axis_size is not None else 18,
+            adjust=adjust,
+            colors=colors,
+            line_alpha=self.line_alpha,
+            fill_alpha=self.fill_alpha,
+            linewidth=linewidth if linewidth is not None else 3,
+            title_size=title_size if axis_size is not None else 20,
+            save_name=save_name,
+        )
 
 def main():
     args = parse_args()
