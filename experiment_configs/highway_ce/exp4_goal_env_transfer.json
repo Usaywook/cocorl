@@ -1,0 +1,28 @@
+{
+    "num_thetas": [10, 20, 40, 60, 80, 100, 120, 140, 160, 180, 200],
+    "num_new_thetas": 30,
+    "new_theta_seed": 1,
+    "demonstration_folder": "demonstrations/",
+    "source_goals": "['left', 'right']",
+    "target_goals": "['middle']",
+    "source_env": "IntersectDefensive-TruncateOnly-v0",
+    "target_env": "IntersectAggressive-TruncateOnly-v0",
+    "restrict_to_constraint_features": true,
+    "ce_solver_kwargs": {
+        "iterations": 3,
+        "num_candidates": 80,
+        "num_elite": 16,
+        "num_trajectories": 5,
+        "verbose": false
+    },
+    "num_jobs": 8,
+    "solver_reinit": 2,
+    "method": [
+        "constraint_learning",
+        "vanilla_irl_max_ent",
+        "known_reward_irl_max_ent"
+    ],
+    "num_seeds": 3,
+    "experiment_label": "highway_ce_exp4",
+    "experiment_script": "src/constraint_learning/linear/highway_experiment.py"
+}
