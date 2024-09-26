@@ -26,6 +26,6 @@
         "vanilla_irl_max_ent",
         "known_reward_irl_max_ent"
     ],
-    "experiment_label": "gridworld_small_exp1",
+    "experiment_label": "gridworld_small_exp4",
     "experiment_script": "src/constraint_learning/linear/gridworld_experiment.py"
 }
