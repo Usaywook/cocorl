@@ -1,5 +1,5 @@
 {
-    "num_thetas": [10, 20, 40, 60, 80, 100, 120, 140, 160, 180, 200],
+    "num_thetas": [220, 240, 260, 280, 300],
     "num_new_thetas": 30,
     "new_theta_seed": 1,
     "demonstration_folder": "demonstrations/",
@@ -22,7 +22,7 @@
         "vanilla_irl_max_ent",
         "known_reward_irl_max_ent"
     ],
-    "num_seeds": 3,
+    "num_seeds": 5,
     "experiment_label": "highway_ce_exp1",
     "experiment_script": "src/constraint_learning/linear/highway_experiment.py"
 }

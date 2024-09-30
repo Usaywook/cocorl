@@ -12,7 +12,7 @@ from constraint_learning.util.plot_utils import plot_shadow_curve
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--save_dir", type=str, default="figs")
-    parser.add_argument("--exp_label", type=str, default="gridworld")
+    parser.add_argument("--exp_label", type=str, default="highway")
     parser.add_argument("--study", type=str, default="transfer")
     parser.add_argument("--file", type=str, default="results.csv")
     parser.add_argument('--plot_keys', nargs='+', type=str, default=["safe_constraint_violation",
@@ -31,7 +31,7 @@ def parse_args():
     parser.add_argument("--fill_alpha", type=float, default=0.2)
     parser.add_argument("--max_reward", type=float, default=1.0)
 
-    parser.add_argument("--index_step", type=int, default=2)
+    parser.add_argument("--index_step", type=int, default=20)
     parser.add_argument("--average_num", type=int, default=4)
     parser.add_argument("--max_index", type=int, default=-1)
 

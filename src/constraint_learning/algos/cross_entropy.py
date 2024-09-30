@@ -59,7 +59,8 @@ def _make_env(
     env_name: str, env_config: EnvConfig, env_goal: controller_env.IntersectionGoal
 ):
     """Makes an environment from config and goal."""
-    env = gymnasium.make(env_name)
+    env = gymnasium.make(env_name,
+                         render_mode=env_config['render_mode'] if 'render_mode' in env_config.keys() else None)
     env.configure(env_config)  # type: ignore
     env = controller_env.LinearVehicleIntersectionWrapper(env)
     env.set_goal(env_goal)  # type: ignore
