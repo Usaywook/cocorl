@@ -7,11 +7,11 @@
     "num_candidates": 200,
     "num_elite": 20,
     "num_trajectories": 20,
-    "num_jobs": 20,
+    "num_jobs": 4,
     "constraint_sort_method": "num_violations",
     "solver_reinit": 10,
     "write_demonstration": true,
-    "num_seeds": 500,
+    "num_seeds": 50,
     "experiment_script": "scripts/cross_entropy_demonstrations.py",
-    "experiment_label": "0422_ce_demonstrations_defensive"
+    "experiment_label": "241004_ce_demonstrations_defensive"
 }

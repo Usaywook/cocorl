@@ -4,6 +4,7 @@ from pathlib import Path
 
 import numpy as np
 import sacred
+from tqdm import tqdm
 
 from constraint_learning.algos import cross_entropy
 from constraint_learning.envs import controller_env, feature_wrapper
@@ -153,8 +154,9 @@ def main(
             num_trajectories=num_trajectories,
             verbose=verbose,
             callback=callback,
+            method='cem_expert',
         )
-        for _ in range(solver_reinit)
+        for _ in tqdm(range(solver_reinit), desc="cem solver")
     ]
 
     feasible = False
@@ -179,7 +181,7 @@ def main(
 
     # Save the reward parameter, resulting parameters, and features to a file
     if write_demonstration:
-        demonstrations_dir = Path("demonstrations")
+        demonstrations_dir = Path("custom_demonstrations")
         demonstrations_dir.mkdir(exist_ok=True)
         timestamp = time.strftime("%Y%m%d%H%M%S")
 
