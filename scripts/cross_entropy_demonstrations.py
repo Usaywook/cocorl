@@ -156,7 +156,7 @@ def main(
             callback=callback,
             method='cem_expert',
         )
-        for _ in tqdm(range(solver_reinit), desc="cem solver")
+        for _ in tqdm(range(solver_reinit), desc="cem solver", leave=True, position=1)
     ]
 
     feasible = False

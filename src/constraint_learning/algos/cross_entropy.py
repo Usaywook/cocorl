@@ -201,7 +201,7 @@ class CrossEntropySolver:
         optimal_rew = -np.inf
         found_feasible = False
 
-        for i in tqdm(range(iterations), desc=f"CEM iteration with {method}"):
+        for i in tqdm(range(iterations), desc=f"CEM iteration with {method}", leave=True, position=2):
             if verbose:
                 print("iteration", i)
 
