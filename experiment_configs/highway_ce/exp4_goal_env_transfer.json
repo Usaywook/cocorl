@@ -9,18 +9,16 @@
     "target_env": "IntersectAggressive-TruncateOnly-v0",
     "restrict_to_constraint_features": true,
     "ce_solver_kwargs": {
-        "iterations": 3,
-        "num_candidates": 80,
-        "num_elite": 16,
+        "iterations": 10,
+        "num_candidates": 200,
+        "num_elite": 20,
         "num_trajectories": 5,
         "verbose": false
     },
     "num_jobs": 8,
     "solver_reinit": 2,
     "method": [
-        "constraint_learning",
-        "vanilla_irl_max_ent",
-        "known_reward_irl_max_ent"
+        "constraint_learning"
     ],
     "num_seeds": 5,
     "experiment_label": "highway_ce_exp4",

@@ -27,7 +27,7 @@ CONSTRAINT_INDICES = np.array([5, 6, 7, 8])
 Demonstration = Dict[str, Any]
 
 ex = sacred.Experiment("highway_experiment_ce")
-ex.observers = [logging.SetID(), sacred.observers.FileStorageObserver("results/highway")]
+ex.observers = [logging.SetID(), sacred.observers.FileStorageObserver("results/highway/transfer")]
 
 
 def solve_with_reinits(
