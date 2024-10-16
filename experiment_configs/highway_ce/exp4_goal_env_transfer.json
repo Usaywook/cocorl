@@ -1,5 +1,5 @@
 {
-    "num_thetas": [220, 240, 260, 280, 300],
+    "num_thetas": [10, 20, 40, 60, 80, 100, 120, 140, 160, 180, 200, 220, 240, 260, 280, 300],
     "num_new_thetas": 30,
     "new_theta_seed": 1,
     "demonstration_folder": "demonstrations/",

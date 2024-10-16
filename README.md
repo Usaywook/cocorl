@@ -93,12 +93,12 @@ python scripts/aggregate_results.py --results_folder results/ --out_file aggrega
 python scripts/aggregate_results.py --results_folder results/highway/transfer/ --out_file highway_transfer_results.csv
 python scripts/aggregate_results.py --results_folder results/highway/no_transfer/ --out_file highway_no_transfer_results.csv
 
+python scripts/draw_plots.py --file highway_transfer_results.csv --exp_label highway --study transfer --save
+python scripts/draw_plots.py --file highway_no_transfer_results.csv --exp_label highway --study no_transfer --save
+
 python scripts/aggregate_results.py --results_folder results/gridworld/exp4/ --out_file gridworld_transfer_results.csv
 python scripts/aggregate_results.py --results_folder results/gridworld/exp1-noise=0.0/ --out_file gridworld_no_transfer_results.csv
 python scripts/aggregate_results.py --results_folder results/gridworld/exp1-noise=0.2/ --out_file gridworld_noise_no_transfer_results.csv
-
-python scripts/draw_plots.py --file highway_transfer_results.csv --exp_label highway --study transfer --save
-python scripts/draw_plots.py --file highway_no_transfer_results.csv --exp_label highway --study no_transfer --save
 
 python scripts/draw_plots.py --file gridworld_transfer_results.csv --exp_label gridworld --study transfer --save
 python scripts/draw_plots.py --file gridworld_no_transfer_results.csv --exp_label gridworld --study no_transfer --save
