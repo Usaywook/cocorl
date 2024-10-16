@@ -27,7 +27,7 @@ CONSTRAINT_INDICES = np.array([5, 6, 7, 8])
 Demonstration = Dict[str, Any]
 
 ex = sacred.Experiment("highway_experiment_ce")
-ex.observers = [logging.SetID(), sacred.observers.FileStorageObserver("results/highway")]
+ex.observers = [logging.SetID(), sacred.observers.FileStorageObserver("results/highway/query")]
 
 
 def solve_with_reinits(
@@ -161,6 +161,7 @@ def highway_experiment(
     source_goals: List[str],
     target_goals: List[str],
     source_env: str,
+    query_env: str,
     target_env: str,
     demonstration_folder: str,
     restrict_to_constraint_features: bool,
@@ -231,7 +232,7 @@ def highway_experiment(
     target_sample = sample_demos(
         all_demos=all_demos,
         num_samples=num_new_thetas,
-        env_name=target_env,
+        env_name=query_env,
         allowed_goals=target_goals,
         seed=new_theta_seed,
     )
