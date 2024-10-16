@@ -210,11 +210,12 @@ def highway_experiment(
     source_sample = sample_demos(
         all_demos=all_demos,
         num_samples=num_thetas,
-        env_name=source_env,
+        env_name=query_env,
         allowed_goals=source_goals,
     )
     theta = [d["reward_parameters"] for d in source_sample]
     demonstrations = [d["features"] for d in source_sample]
+    print(f"Source demonstrations are loaded")
 
     # hacky way of adding a "safe" demonstrations that is not moving. Turns out
     # that in the intersection environment this corresponds to adding a zero vector.
@@ -232,7 +233,7 @@ def highway_experiment(
     target_sample = sample_demos(
         all_demos=all_demos,
         num_samples=num_new_thetas,
-        env_name=query_env,
+        env_name=target_env,
         allowed_goals=target_goals,
         seed=new_theta_seed,
     )
