@@ -15,8 +15,11 @@ def parse_args():
     parser.add_argument("--exp_label", type=str, default="highway")
     parser.add_argument("--study", type=str, default="transfer")
     parser.add_argument("--file", type=str, default="results.csv")
-    parser.add_argument('--plot_keys', nargs='+', type=str, default=["safe_constraint_violation",
-                                                                     "safe_reward"],
+    parser.add_argument('--plot_keys', nargs='+', type=str, default=[
+        "safe_constraint_violation",
+        "safe_reward",
+        # "found_safe_solution",
+        ],
                         help='input plot keys')
 
     parser.add_argument('--adjust', nargs=4, type=float, default=[0.12, 0.96, 0.92, 0.12],
@@ -90,12 +93,14 @@ class Plotter(object):
         label_dict_all = {
             "safe_constraint_violation": "Constraint Violation",
             "safe_reward": "Return",
+            "found_safe_solution": "Feasiblity",
         }
         self.label_dict = {key: label_dict_all[key] for key in self.plot_keys}
 
         plot_y_lim_dict_all = {
             "safe_constraint_violation": None, #(0,1),
             "safe_reward": None, #(0,8),
+            "found_safe_solution": None, #(0,8),
         }
         self.plot_y_lim_dict = {key: plot_y_lim_dict_all[key] for key in self.plot_keys}
 
@@ -141,13 +146,13 @@ class Plotter(object):
             method_df = df[df['method'] == method].copy()
             method_df = method_df.dropna(axis=1)
             seed_df_list = self._seed_df_list(method_df)
-            
+
             all_results = []
             for seed_df in seed_df_list:
                 results = {}
                 for key in self.plot_keys:
                     results.update({key: list(seed_df[key].values)})
-                    
+
                 all_results.append(results)
 
             mean_dict, std_dict, indice = self.mean_std_plot_results(all_results)
@@ -215,46 +220,47 @@ class Plotter(object):
             return self.unique_indice[i]
         else:
             return max(i * self.index_step, 1)
-        
+
 
     def _seed_df_list(self, df):
         df_list = []
         if self.use_indice:
             self.unique_indice = np.sort(df['num_thetas'].unique())
-        unique_seeds = df['seed'].unique()   
+        unique_seeds = df['seed'].unique()
         for seed in unique_seeds:
             seed_df = df[df['seed'] == seed].copy()
             seed_df.set_index("num_thetas", inplace=True)
             seed_df.sort_index(inplace=True)
             seed_df = seed_df[self.plot_keys]
             df_list.append(seed_df)
-        
-        merge_df_list = []
-        used_check = set()
-        for i in range(len(df_list)):
-            df_merge = df_list[i].copy()
-            A = set(df_merge.index.values.tolist())
-            for j in range(i + 1, len(df_list)):
-                df_check = df_list[j]
-                B = set(df_check.index.values.tolist())                
-                diff_set = B - A
-                inter_set = A.intersection(B)
-                if len(diff_set) != 0:
-                    if (i in used_check) or (j in used_check):
-                        continue
-                    used_check = used_check | {i} | {j}
-                    
-                    diff_df = df_check[df_check.index.isin(diff_set)]                    
-                    df_merge = pd.concat([df_merge, diff_df], axis=0)
-                    df_merge.sort_index(inplace=True)
-                    merge_df_list.append(df_merge)
-                    A = A | B
-                    # print(i,j, unique_seeds[i], unique_seeds[j], A)
-                    if len(inter_set) != 0:
-                        inter_df = df_check[df_check.index.isin(inter_set)]
-                        merge_df_list.append(inter_df)
-                    
-        return merge_df_list
+
+        return df_list
+        # merge_df_list = []
+        # used_check = set()
+        # for i in range(len(df_list)):
+        #     df_merge = df_list[i].copy()
+        #     A = set(df_merge.index.values.tolist())
+        #     for j in range(i + 1, len(df_list)):
+        #         df_check = df_list[j]
+        #         B = set(df_check.index.values.tolist())
+        #         diff_set = B - A
+        #         inter_set = A.intersection(B)
+        #         if len(diff_set) != 0:
+        #             if (i in used_check) or (j in used_check):
+        #                 continue
+        #             used_check = used_check | {i} | {j}
+
+        #             diff_df = df_check[df_check.index.isin(diff_set)]
+        #             df_merge = pd.concat([df_merge, diff_df], axis=0)
+        #             df_merge.sort_index(inplace=True)
+        #             merge_df_list.append(df_merge)
+        #             A = A | B
+        #             # print(i,j, unique_seeds[i], unique_seeds[j], A)
+        #             if len(inter_set) != 0:
+        #                 inter_df = df_check[df_check.index.isin(inter_set)]
+        #                 merge_df_list.append(inter_df)
+
+        # return merge_df_list
 
     def mean_std_plot_results(self, all_results):
         mean_results = {}
@@ -350,7 +356,10 @@ class Plotter(object):
                 plt.legend(fontsize=self.legend_size, loc='center', ncol=len(self.unique_methods))
                 plt.axis('off')
 
-            plt.savefig(os.path.join(self.save_dir, "legend_only.png"))
+            if save_name is not None:
+                plt.savefig(os.path.join(self.save_dir, "legend_only.png"))
+            else:
+                plt.show()
             plt.close()
 
     def plot_results(self, mean_results_moving_avg_dict,

@@ -89,6 +89,20 @@ python run_sacred_experiments.py --config experiment_configs/highway_ce/exp3_env
 By default the results of all experiments are stored in `results/`. Each result is stored in an individual sub-folder labelled with a timestamp. To aggregate and evaluate the experiment results, we provide a script `aggregate_results.py`. To use it, execute
 ```
 python scripts/aggregate_results.py --results_folder results/ --out_file aggregated.csv
+
+python scripts/aggregate_results.py --results_folder results/highway/transfer/ --out_file highway_transfer_results.csv
+python scripts/aggregate_results.py --results_folder results/highway/no_transfer/ --out_file highway_no_transfer_results.csv
+
+python scripts/aggregate_results.py --results_folder results/gridworld/exp4/ --out_file gridworld_transfer_results.csv
+python scripts/aggregate_results.py --results_folder results/gridworld/exp1-noise=0.0/ --out_file gridworld_no_transfer_results.csv
+python scripts/aggregate_results.py --results_folder results/gridworld/exp1-noise=0.2/ --out_file gridworld_noise_no_transfer_results.csv
+
+python scripts/draw_plots.py --file highway_transfer_results.csv --exp_label highway --study transfer --save
+python scripts/draw_plots.py --file highway_no_transfer_results.csv --exp_label highway --study no_transfer --save
+
+python scripts/draw_plots.py --file gridworld_transfer_results.csv --exp_label gridworld --study transfer --save
+python scripts/draw_plots.py --file gridworld_no_transfer_results.csv --exp_label gridworld --study no_transfer --save
+python scripts/draw_plots.py --file gridworld_noise_no_transfer_results.csv --exp_label gridworld --study noise_no_transfer --save
 ```
 
 This produces a csv file `aggregated.csv` containing the results from all experiments in `results/`. This csv file can be used to reproduce the plots shown in the paper.

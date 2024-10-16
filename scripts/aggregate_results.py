@@ -57,8 +57,10 @@ def get_df_entry_from_experiment(ex):
                     num_phis=key_or_none(ex.config, "num_phis"),
                     seed=key_or_none(ex.config, "seed"),
                     true_reward=ex.result.true_reward[i],
-                    safe_reward=ex.result.safe_reward[i],
-                    safe_constraint_violation=ex.result.safe_constraint_violations[i],
+                    # safe_reward=ex.result.safe_reward[i],
+                    safe_reward=ex.result.safe_reward.mean(),
+                    # safe_constraint_violation=ex.result.safe_constraint_violations[i],
+                    safe_constraint_violation=ex.result.safe_constraint_violations.mean(),
                     true_solution_in_safe_set=(ex.result.true_solution_in_safe_set[i]),
                     true_solution_in_unsafe_set=(
                         ex.result.true_solution_in_unsafe_set[i]
@@ -98,7 +100,8 @@ def get_df_entry_from_experiment(ex):
                     or highway_ce
                     or (gridworld and method == "constraint_learning")
                 ):
-                    result["found_safe_solution"] = ex.result.found_safe_solution[i]
+                    # result["found_safe_solution"] = ex.result.found_safe_solution[i]
+                    result["found_safe_solution"] = ex.result.found_safe_solution.mean()
 
                 if gridworld:
                     result["safe_constraint_max"] = ex.result.safe_constraint_max[i]

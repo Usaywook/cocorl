@@ -36,14 +36,14 @@ def print_dict(info: Dict[str, Any], depth: str = 1, flush: bool = False):
             np.set_printoptions(precision=4, suppress=True)
             if len(value.shape) > 1:
                 print(f"{prefix}{key:30}: \n{value}", flush=flush)
-            else: 
+            else:
                 print(f"{prefix}{key:30}: {value}", flush=flush)
 
         elif isinstance(value, float):
             print(f"{prefix}{key:30}: {value:30.4f}", flush=flush)
         else:
             print(f"{prefix}{key:30}: {value:30}", flush=flush)
-            
+
 def make_env(
     env_name: str,
     env_config: EnvConfig,
@@ -68,47 +68,50 @@ def make_env(
     env.seed(seed)
     random.seed(seed)
     np.random.seed(seed)
-    
+
     return env
 
 def rollout_until_truncation(
     env: gymnasium.Env, max_duration: int, verbose: bool = False
 ) -> int:
-    
+
     vehicle_params = controller_env.ControllerParameters(
-        acceleration=[0.6793309091139195,
-        -0.22509004111946312,
-        5.754209779922299],
-        steering=[5.003952336902663,
-        10.026194099562712],
+        acceleration=[0.06653078952074894,
+        0.6325689200679441,
+        5.881895291905343],
+        steering=[ 5.154084638597366,
+        16.706544064918482],
     )
     env.set_parameters(vehicle_params)
-    
+
     obs, info = env.reset()
-    
+
     print(f"vehicle acc: {env.vehicle.ACCELERATION_PARAMETERS}, vehicle steer: {env.vehicle.STEERING_PARAMETERS}")
     print(f"vehicle acc range: \n{env.vehicle.ACCELERATION_RANGE}, \nvehicle steer range: \n{env.vehicle.STEERING_RANGE}")
-    
+
     done, steps = False, 0
     total_reward = 0
     total_cost = 0
+    features = 0
     while not done:
         action = env.ACTIONS_INDEXES["IDLE"] # actions depends on vehicle_params regardless of action
         # action = env.action_space.sample()
-              
+
         obs, reward, terminated, truncated, info = env.step(action)
         done = terminated or truncated
         steps += 1
-        
+
         total_reward += reward
         total_cost += info['cost']
-        
+        features += info['feature_vector']
+
         if verbose:
             print(f"feature: {info['feature_vector']}, cost: {info['cost']}")
             print(f"steps {steps}, speed: {env.vehicle.speed:.2f}, target_speed: {env.vehicle.target_speed:.2f}, {env.vehicle.action}, action: {action}")
         if steps >= max_duration or done:
             if verbose:
-                print(f"\tEpisode reward: {total_reward}, \tEpisode cost: {total_cost}")
+                print(f"\tEpisode reward: {total_reward/steps}, \tEpisode cost: {total_cost/steps}")
+                print(f"\tEpisode Feature: {features/steps}")
                 print(f"\tEpisode done at {steps} step")
                 # print_dict(info)
             break
@@ -120,7 +123,7 @@ def debug():
 
 @ex.config
 def cfg():
-    env_name = "IntersectDefensive-TruncateOnly-v0"
+    env_name = "Intersect-TruncateOnly-v0"
     allowed_goals = ["o1", "o2", "o3"]
     env_goal = "o1"
     reward_mean =  [0, 0, 0, 0.1, -0.2, 0, 0, 0, 0]
@@ -182,7 +185,7 @@ def main(
             0.1,  # not_on_street
         ]
     )
-    
+
     seed = 0
 
     # Sample reward parameter from the specified distribution
@@ -208,9 +211,9 @@ def main(
         env = make_env(env_name, env_config, env_goal,
                        reward_parameters, constraint_parameters, constraint_thresholds, seed)
     print(f"reward params: {reward_parameters}:")
-    
+
     rollout_until_truncation(env, 15, True)
-    
+
     # solver = cross_entropy.CrossEntropySolver(
     #     env_name,
     #     env_config,
@@ -260,12 +263,12 @@ def main(
 
     #         if 'render_mode' in env_config.keys():
     #             env.render()
-        
+
     #     for key, value in info.items():
     #         if key == 'features' or key == 'cost':
-    #             continue 
+    #             continue
     #         print(f"\t{key:30}: {value:10.2f}")
-            
+
     # def callback(locals, globals):
     #     pass
 
