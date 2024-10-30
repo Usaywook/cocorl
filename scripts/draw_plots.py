@@ -18,7 +18,7 @@ def parse_args():
     parser.add_argument('--plot_keys', nargs='+', type=str, default=[
         "safe_constraint_violation",
         "safe_reward",
-        # "found_safe_solution",
+        "found_safe_solution",
         ],
                         help='input plot keys')
 
@@ -83,10 +83,15 @@ class Plotter(object):
         self.exp_label = args.exp_label
 
         method_names_labels_dict_all = {
+            "proposed": "Proposed",
             "constraint_learning": "CoCoRL",
-            "vanilla_irl_max_ent": "Average IRL",
-            "known_reward_irl_max_ent": "Known IRL",
-            "shared_reward_irl_max_ent": "Shared IRL",
+            "known_reward_irl_max_ent": "MECL",
+            "vanilla_irl_max_ent": "MERL",
+            "proposed": "Proposed",
+            # "constraint_learning": "CoCoRL",
+            # "vanilla_irl_max_ent": "Average IRL",
+            # "known_reward_irl_max_ent": "Known IRL",
+            # "shared_reward_irl_max_ent": "Shared IRL",
         }
         self.method_names_labels_dict = {method: method_names_labels_dict_all[method] for method in self.unique_methods}
 
@@ -105,19 +110,27 @@ class Plotter(object):
         self.plot_y_lim_dict = {key: plot_y_lim_dict_all[key] for key in self.plot_keys}
 
         linestyle_dict_all = {
-            "CoCoRL": "-",
-            "Average IRL": ":",
-            "Known IRL": "--",
-            "Shared IRL": "-.",
+            # "CoCoRL": "-",
+            # "Average IRL": ":",
+            # "Known IRL": "--",
+            # "Shared IRL": "-.",
+            "Proposed": "-",
+            "CoCoRL": "--",
+            "MECL": ":",
+            "MERL": "-.",
         }
         self.linestyle_dict = {method: linestyle_dict_all[method_names_labels_dict_all[method]]
                                for method in self.unique_methods}
 
         colors_dict_all = {
-            "CoCoRL": "r",
-            "Average IRL": "b",
-            "Known IRL": "orange",
-            "Shared IRL": "g",
+            # "CoCoRL": "r",
+            # "Average IRL": "b",
+            # "Known IRL": "orange",
+            # "Shared IRL": "g",
+            "Proposed": "r",
+            "CoCoRL": "b",
+            "MECL": "orange",
+            "MERL": "g",
         }
         self.colors = [colors_dict_all[method_names_labels_dict_all[method]]
                        for method in self.unique_methods]
@@ -234,33 +247,33 @@ class Plotter(object):
             seed_df = seed_df[self.plot_keys]
             df_list.append(seed_df)
 
-        return df_list
-        # merge_df_list = []
-        # used_check = set()
-        # for i in range(len(df_list)):
-        #     df_merge = df_list[i].copy()
-        #     A = set(df_merge.index.values.tolist())
-        #     for j in range(i + 1, len(df_list)):
-        #         df_check = df_list[j]
-        #         B = set(df_check.index.values.tolist())
-        #         diff_set = B - A
-        #         inter_set = A.intersection(B)
-        #         if len(diff_set) != 0:
-        #             if (i in used_check) or (j in used_check):
-        #                 continue
-        #             used_check = used_check | {i} | {j}
+        # return df_list
+        merge_df_list = []
+        used_check = set()
+        for i in range(len(df_list)):
+            df_merge = df_list[i].copy()
+            A = set(df_merge.index.values.tolist())
+            for j in range(i + 1, len(df_list)):
+                df_check = df_list[j]
+                B = set(df_check.index.values.tolist())
+                diff_set = B - A
+                inter_set = A.intersection(B)
+                if len(diff_set) != 0:
+                    if (i in used_check) or (j in used_check):
+                        continue
+                    used_check = used_check | {i} | {j}
 
-        #             diff_df = df_check[df_check.index.isin(diff_set)]
-        #             df_merge = pd.concat([df_merge, diff_df], axis=0)
-        #             df_merge.sort_index(inplace=True)
-        #             merge_df_list.append(df_merge)
-        #             A = A | B
-        #             # print(i,j, unique_seeds[i], unique_seeds[j], A)
-        #             if len(inter_set) != 0:
-        #                 inter_df = df_check[df_check.index.isin(inter_set)]
-        #                 merge_df_list.append(inter_df)
+                    diff_df = df_check[df_check.index.isin(diff_set)]
+                    df_merge = pd.concat([df_merge, diff_df], axis=0)
+                    df_merge.sort_index(inplace=True)
+                    merge_df_list.append(df_merge)
+                    A = A | B
+                    # print(i,j, unique_seeds[i], unique_seeds[j], A)
+                    if len(inter_set) != 0:
+                        inter_df = df_check[df_check.index.isin(inter_set)]
+                        merge_df_list.append(inter_df)
 
-        # return merge_df_list
+        return merge_df_list if len(merge_df_list) > 0 else df_list
 
     def mean_std_plot_results(self, all_results):
         mean_results = {}
