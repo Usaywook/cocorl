@@ -412,8 +412,10 @@ def highway_experiment(
             found_safe_solution.append(feasible)
             safe_solutions.append(features)
 
+    safe_features = np.zeros(shape=(len(new_theta), 9))
     safe_reward = np.zeros(len(new_theta))
     true_reward = np.zeros(len(new_theta))
+    safe_constraint = np.zeros((len(new_theta), len(threshold)))
     safe_constraint_violations = np.zeros(len(new_theta))
     true_solution_in_safe_set = np.zeros(len(new_theta), dtype=bool)
     true_solution_in_unsafe_set = np.zeros(len(new_theta), dtype=bool)
@@ -422,9 +424,11 @@ def highway_experiment(
     for i, (new_theta_i, true_solution, safe_solution) in enumerate(
         zip(new_theta, true_solutions, safe_solutions)
     ):
+        safe_features[i] = safe_solution
         safe_reward[i] = np.dot(safe_solution, new_theta_i)
         true_reward[i] = np.dot(true_solution, new_theta_i)
-
+        
+        safe_constraint[i] = phi @ safe_solution - threshold
         safe_constraint_violations[i] = np.sum(
             np.maximum(phi @ safe_solution - threshold, 0)
         )
@@ -446,9 +450,11 @@ def highway_experiment(
             )
 
     return results.CEHighwayExperimentResult(
+        safe_features=safe_features,
         true_reward=true_reward,
         safe_reward=safe_reward,
         found_safe_solution=np.array(found_safe_solution),
+        safe_constraint=safe_constraint,
         safe_constraint_violations=safe_constraint_violations,
         true_solution_in_safe_set=true_solution_in_safe_set,
         true_solution_in_unsafe_set=true_solution_in_unsafe_set,

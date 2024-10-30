@@ -87,10 +87,11 @@ class CEHighwayExperimentResult:
         - true_solution_in_uncertain_set: fraction of true solutions neither in inferred
                                           safe or unsafe set
     """
-
+    safe_features: np.ndarray
     true_reward: np.ndarray
     safe_reward: np.ndarray
     found_safe_solution: np.ndarray
+    safe_constraint: np.ndarray
     safe_constraint_violations: np.ndarray
     true_solution_in_safe_set: np.ndarray
     true_solution_in_unsafe_set: np.ndarray

@@ -81,6 +81,7 @@ To run the three experiments presented in the paper, execute the following comma
 python run_sacred_experiments.py --config experiment_configs/highway_ce/exp1_no_transfer.json --num_jobs 1
 python run_sacred_experiments.py --config experiment_configs/highway_ce/exp2_goal_transfer.json --num_jobs 1
 python run_sacred_experiments.py --config experiment_configs/highway_ce/exp3_env_transfer.json --num_jobs 1
+python run_sacred_experiments.py --config experiment_configs/highway_ce/exp4_goal_env_transfer.json --num_jobs 1
 ```
 
 

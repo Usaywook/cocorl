@@ -155,6 +155,9 @@ if __name__ == "__main__":
 
         if args.drop_output:
             command += ["&>", "/dev/null"]
+            
+        tqdm.write(" ".join(command[3:]))
+        
         experiment_label = config_updates["experiment_label"]
 
         if args.slurm or args.bsub:
